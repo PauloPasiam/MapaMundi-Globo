@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
+    <script src="scripts/qbworldmap.js"></script>
+    <style>
+      body {
+        background-color: #2d2c2c;
+        overflow: hidden;
+      }
+      #tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        pointer-events: none;
+        display: none;
+      }
+      #lightbox {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+      }
+
+      #lightbox-content {
+        background: white;
+        color: black;
+        padding: 30px;
+        border-radius: 8px;
+        max-width: 400px;
+        position: relative;
+        box-shadow: 0 0 10px #000;
+      }
+
+      #lightbox-close {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        font-size: 24px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    
+  <div id="qb-worldmap-svg" style="width: 100vw; height: 100vh;"></div>
+
+  <!-- Lightbox para exibir informações dos países -->
+  <div id="lightbox" style="display: none;">
+    <div id="lightbox-content">
+      <span id="lightbox-close">&times;</span>
+      <div id="lightbox-info"></div>
+    </div>
+  </div>
+
+  <script>
+
+    // 1. Nomes que você escolhe
+    const paisesPorNome = ["Brazil", "United States", "China", "Japan"];
+
+    // 2. Mapa de nome → código ISO numérico
+    const nomeParaCodigo = {
+      Brazil: "076",
+      "United States": "840",
+      China: "156",
+      Japan: "392",
+    };
+
+    // 3. Informações extras por país
+    const infoPais = {
+      "076": "Brasil: 40 Projetos",
+      "840": "EUA: 5 Projetos",
+      "156": "China: 1 Projeto",
+      "392": "Japão: 2 Projetos",
+    };
+
+    // 4. Convertemos os nomes em códigos
+    const paisesSelecionados = paisesPorNome.map((nome) => nomeParaCodigo[nome]);
+
+    // 5. Iniciamos o mapa
+    qb_worldmap(
+      "#qb-worldmap-svg",   // Onde o mapa será renderizado
+      null,                 // Tipo de mundo (não usado aqui)
+      paisesSelecionados,   // Países selecionados
+      window.innerHeight,   // Altura do mapa
+      window.innerWidth,    // Largura do mapa
+      null,                 // CSS personalizado (usando o padrão)
+      "#666",               // Cor padrão dos países
+      "#00C1CF",            // Cor ao clicar no país
+      "#00D8E5",            // Cor dos países "selecionados"
+      null,                 // Fonte de dados JSON (usando a padrão do script)
+      true                  // Verbose: imprime mensagens no console
+    );
+
+    // Salva função original
+    const originalClick = qb_worldmap.go_to_country;
+
+    // Substitui função para abrir o lightbox
+    qb_worldmap.go_to_country = function (codigo) {
+      originalClick(codigo);
+
+      const texto = infoPais[codigo] || "Informações não disponíveis";
+      document.getElementById("lightbox-info").innerText = texto;
+      document.getElementById("lightbox").style.display = "flex";
+    };
+
+    // Fecha o lightbox ao clicar no X
+    document.getElementById("lightbox-close").onclick = function () {
+      document.getElementById("lightbox").style.display = "none";
+    };
+
+    // Fecha ao clicar fora do conteúdo
+    window.onclick = function (e) {
+      const box = document.getElementById("lightbox-content");
+      if (e.target.id === "lightbox") {
+        document.getElementById("lightbox").style.display = "none";
+      }
+    };
+  </script>
+
+  </body>
+</html>
