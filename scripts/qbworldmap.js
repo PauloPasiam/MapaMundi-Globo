@@ -38,8 +38,7 @@ function qb_worldmap(
   let countries = null;
   const sensitivity = 75;
   const projection = d3.geoOrthographic()
-  //.scale(400)    //tamanho do globo
-  .scale(Math.min(width, height) / 3.1)
+  .scale(Math.min(width, height) / 3.1) // escala do globo
   .translate([width / 2, height / 2]);
   const org_scale = projection.scale();
   const path = d3.geoPath(projection);
