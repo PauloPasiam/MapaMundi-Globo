@@ -39,6 +39,7 @@ function qb_worldmap(
   const sensitivity = 75;
   const projection = d3.geoOrthographic()
   //.scale(400)    //tamanho do globo
+  .scale(Math.min(width, height) / 3.1)
   .translate([width / 2, height / 2]);
   const org_scale = projection.scale();
   const path = d3.geoPath(projection);
@@ -89,7 +90,22 @@ function qb_worldmap(
       })
     );
 
+    // Botão para redefinir o zoom
+    const resetButton = document.getElementById("reset-zoom");
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        projection.scale(org_scale); // Restaura a escala original
+        svg.selectAll("path").attr("d", path);
+        ocean.attr("r", projection.scale());
+        graticule_lines.attr("d", path);
+      });
+    } 
+
+    
+
   d3.select(window).on("resize", size_changed);
+
+ 
 
   d3.json(location, function (error, world) {
     if (error) {
@@ -120,6 +136,8 @@ function qb_worldmap(
         });
     }
   });
+
+   
 
   function go_to_country(country_code_3) {
     verbose && console.log(`Go to country ${country_code_3}`);
