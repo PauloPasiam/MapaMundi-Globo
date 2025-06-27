@@ -1,7 +1,17 @@
+let svg, projection, path, graticule_lines, pinsGroup;
+let projetosSalvos = [];
+let autoRotate = true;
+let rotationSpeed = 0.08; // controle de velocidade (menor = mais suave)
+let rotationInterval;
+
 /* eslint-disable camelcase */
 
-document.write('<script type="text/javascript" src="scripts/d3.v4.min.js"></script>');
-document.write('<script type="text/javascript" src="scripts/topojson.v0.min.js"></script>');
+document.write(
+  '<script type="text/javascript" src="scripts/d3.v4.min.js"></script>'
+);
+document.write(
+  '<script type="text/javascript" src="scripts/topojson.v0.min.js"></script>'
+);
 
 function qb_worldmap(
   svg_id,
@@ -37,10 +47,18 @@ function qb_worldmap(
   let current_subject = null;
   let countries = null;
   const sensitivity = 75;
+  //const projection = d3;
+  // .geoOrthographic()
+  // .scale(Math.min(width, height) / 3.1) // escala do globo
+  // .translate([width / 2, height / 2]);
+
   const projection = d3.geoOrthographic()
-  .scale(Math.min(width, height) / 3.1) // escala do globo
-  .translate([width / 2, height / 2]);
-  const org_scale = projection.scale();
+    .scale(Math.min(width, height) / 3.1)
+    .translate([width / 2, height / 2]);
+
+  let org_scale = projection.scale();
+
+  // const org_scale = projection.scale();
   const path = d3.geoPath(projection);
 
   const svg = d3
@@ -50,7 +68,8 @@ function qb_worldmap(
     .attr("width", width);
 
   // Círculo do oceano
-  const ocean = svg.append("circle")
+  const ocean = svg
+    .append("circle")
     .attr("cx", width / 2)
     .attr("cy", height / 2)
     .attr("r", projection.scale())
@@ -78,6 +97,7 @@ function qb_worldmap(
         ]);
         svg.selectAll("path").attr("d", path);
         graticule_lines.attr("d", path);
+        desenharPins(); // ⬅️ atualiza pins ao girar
       })
     )
     .call(
@@ -86,25 +106,30 @@ function qb_worldmap(
         svg.selectAll("path").attr("d", path);
         ocean.attr("r", projection.scale());
         graticule_lines.attr("d", path);
+        desenharPins(); // ⬅️ atualiza pins ao dar zoom
       })
     );
+  svg
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
 
-    // Botão para redefinir o zoom
-    const resetButton = document.getElementById("reset-zoom");
-    if (resetButton) {
-      resetButton.addEventListener("click", () => {
-        projection.scale(org_scale); // Restaura a escala original
-        svg.selectAll("path").attr("d", path);
-        ocean.attr("r", projection.scale());
-        graticule_lines.attr("d", path);
-      });
-    } 
+  svg.on("click", () => {
+    autoRotate = false;
+  });
 
-    
+  // Botão para redefinir o zoom
+  const resetButton = document.getElementById("reset-zoom");
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      projection.scale(org_scale); // Restaura a escala original
+      svg.selectAll("path").attr("d", path);
+      ocean.attr("r", projection.scale());
+      graticule_lines.attr("d", path);
+      desenharPins(); // ⬅️ reposiciona pins
+    });
+  }
 
   d3.select(window).on("resize", size_changed);
-
- 
 
   d3.json(location, function (error, world) {
     if (error) {
@@ -136,7 +161,40 @@ function qb_worldmap(
     }
   });
 
-   
+  function desenharPins() {
+    if (!pinsGroup) {
+      pinsGroup = svg.append("g").attr("class", "pins");
+    } else {
+      pinsGroup.selectAll("*").remove();
+    }
+
+    const rotation = projection.rotate(); // [longitude, latitude, tilt]
+
+    projetosSalvos.forEach((projeto) => {
+      const coords = [projeto.longitude, projeto.latitude];
+      const point = d3.geoRotation(rotation)(coords); // rotaciona o ponto conforme a visão atual
+
+      // ponto "visível" se longitude rotacionada estiver entre -90 e 90 graus
+      const visivel = point[0] > -90 && point[0] < 90;
+
+      if (visivel) {
+        const [x, y] = projection(coords);
+        pinsGroup
+          .append("image")
+          .attr("xlink:href", "https://img.icons8.com/fluency/48/marker.png")
+          .attr("width", 20)
+          .attr("height", 20)
+          .attr("x", x - 10)
+          .attr("y", y - 20)
+          .attr("cursor", "pointer")
+          .on("click", function () {
+            const box = document.getElementById("lightbox-info");
+            box.innerHTML = `<h3>${projeto.nome}</h3><p>${projeto.descricao}</p>`;
+            document.getElementById("lightbox").style.display = "flex";
+          });
+      }
+    });
+  }
 
   function go_to_country(country_code_3) {
     verbose && console.log(`Go to country ${country_code_3}`);
@@ -168,6 +226,7 @@ function qb_worldmap(
               projection.rotate(rotate(x));
               country.attr("d", path);
               graticule_lines.attr("d", path);
+              desenharPins();
             };
           })
           .transition();
@@ -176,12 +235,27 @@ function qb_worldmap(
   }
 
   function size_changed() {
-    const _width = document.getElementById(svg_id.substring(1)).clientWidth;
+    const container = document.getElementById(svg_id.substring(1));
+    const _width = container.clientWidth;
+    const _height = container.clientHeight;
+
     if (svg != null) {
-      svg.attr("width", _width);
-      projection.translate([_width / 2, height / 2]);
+      svg.attr("width", _width).attr("height", _height);
+
+      // Atualiza escala proporcional ao menor lado
+      const newScale = Math.min(_width, _height) / 3.1;
+      projection.scale(newScale);
+      projection.translate([_width / 2, _height / 2]); // <-- centraliza
+
+      // Recalcula caminhos
       svg.selectAll("path").attr("d", path);
-      ocean.attr("cx", _width / 2); // Atualiza posição do círculo
+      ocean
+        .attr("cx", _width / 2)
+        .attr("cy", _height / 2)
+        .attr("r", projection.scale());
+
+      graticule_lines.attr("d", path);
+      desenharPins(); // Redesenha os pins com nova projeção
     }
   }
 
@@ -189,6 +263,54 @@ function qb_worldmap(
     return current_subject;
   }
 
+  //Inclui Pins ao Mapa
+  function adicionarPins(projetos) {
+    const pins = svg.append("g").attr("class", "pins");
+
+    projetos.forEach((projeto) => {
+      const [x, y] = projection([projeto.longitude, projeto.latitude]);
+
+      pins
+        .append("circle")
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("r", 6)
+        .attr("fill", "#ff6f61")
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 1.5)
+        .attr("cursor", "pointer")
+        .on("click", function () {
+          // Abre o lightbox com info do projeto
+          const box = document.getElementById("lightbox-info");
+          box.innerHTML = `<h3>${projeto.nome}</h3><p>${projeto.descricao}</p>`;
+          document.getElementById("lightbox").style.display = "flex";
+        });
+    });
+  }
+
+  function adicionarPins(dados) {
+    projetosSalvos = dados;
+    desenharPins();
+  }
+
+  /* Rotação do Globo */
+  function startAutoRotation() {
+    if (rotationInterval) return; // já está rodando
+    rotationInterval = d3.interval(() => {
+      if (!autoRotate) return;
+
+      const rotate = projection.rotate();
+      rotate[0] += rotationSpeed; // gira no eixo Y (longitude)
+      projection.rotate(rotate);
+
+      svg.selectAll("path").attr("d", path);
+      graticule_lines.attr("d", path);
+      desenharPins(); // mantém pins em posição correta
+    }, 30); // frequência de atualização
+  }
+
   qb_worldmap.go_to_country = go_to_country;
   qb_worldmap.get_current_subject = get_current_subject;
+  qb_worldmap.adicionarPins = adicionarPins;
+  startAutoRotation();
 }

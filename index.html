@@ -52,97 +52,123 @@
   </head>
 
   <body>
-    
-  <div id="qb-worldmap-svg" style="width: 100vw; height: 100vh;"></div>
+    <div id="qb-worldmap-svg" style="width: 100vw; height: 100vh"></div>
 
-  <button id="reset-zoom" style="
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      padding: 10px 15px;
-      background-color: #00c1cf;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-    ">
-    Redefinir Zoom
-  </button>
+    <button
+      id="reset-zoom"
+      style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        padding: 10px 15px;
+        background-color: #00c1cf;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+      "
+    >
+      Redefinir Zoom
+    </button>
 
-
-  <!-- Lightbox para exibir informações dos países -->
-  <div id="lightbox" style="display: none;">
-    <div id="lightbox-content">
-      <span id="lightbox-close">&times;</span>
-      <div id="lightbox-info"></div>
+    <!-- Lightbox para exibir informações dos países -->
+    <div id="lightbox" style="display: none">
+      <div id="lightbox-content">
+        <span id="lightbox-close">&times;</span>
+        <div id="lightbox-info"></div>
+      </div>
     </div>
-  </div>
 
-  <script>
+    <script>
+      // 1. Nomes que você escolhe
+      const paisesPorNome = ["Brazil", "United States", "China", "Japan"];
 
-    // 1. Nomes que você escolhe
-    const paisesPorNome = ["Brazil", "United States", "China", "Japan"];
+      // 2. Mapa de nome → código ISO numérico
+      const nomeParaCodigo = {
+        Brazil: "076",
+        "United States": "840",
+        China: "156",
+        Japan: "392",
+      };
 
-    // 2. Mapa de nome → código ISO numérico
-    const nomeParaCodigo = {
-      Brazil: "076",
-      "United States": "840",
-      China: "156",
-      Japan: "392",
-    };
+      // 3. Informações extras por país
+      const infoPais = {
+        "076": "Brasil: 40 Projetos",
+        840: "EUA: 5 Projetos",
+        156: "China: 1 Projeto",
+        392: "Japão: 2 Projetos",
+      };
 
-    // 3. Informações extras por país
-    const infoPais = {
-      "076": "Brasil: 40 Projetos",
-      "840": "EUA: 5 Projetos",
-      "156": "China: 1 Projeto",
-      "392": "Japão: 2 Projetos",
-    };
+      // 4. Convertemos os nomes em códigos
+      const paisesSelecionados = paisesPorNome.map(
+        (nome) => nomeParaCodigo[nome]
+      );
 
-    // 4. Convertemos os nomes em códigos
-    const paisesSelecionados = paisesPorNome.map((nome) => nomeParaCodigo[nome]);
+      // 5. Iniciamos o mapa
+      qb_worldmap(
+        "#qb-worldmap-svg", // Onde o mapa será renderizado
+        null, // Tipo de mundo (não usado aqui)
+        paisesSelecionados, // Países selecionados
+        window.innerHeight, // Altura do mapa
+        window.innerWidth, // Largura do mapa
+        null, // CSS personalizado (usando o padrão)
+        "#666", // Cor padrão dos países
+        "#00C1CF", // Cor ao clicar no país
+        "#00D8E5", // Cor dos países "selecionados"
+        null, // Fonte de dados JSON (usando a padrão do script)
+        true // Verbose: imprime mensagens no console
+      );
 
-    // 5. Iniciamos o mapa
-    qb_worldmap(
-      "#qb-worldmap-svg",   // Onde o mapa será renderizado
-      null,                 // Tipo de mundo (não usado aqui)
-      paisesSelecionados,   // Países selecionados
-      window.innerHeight,   // Altura do mapa
-      window.innerWidth,    // Largura do mapa
-      null,                 // CSS personalizado (usando o padrão)
-      "#666",               // Cor padrão dos países
-      "#00C1CF",            // Cor ao clicar no país
-      "#00D8E5",            // Cor dos países "selecionados"
-      null,                 // Fonte de dados JSON (usando a padrão do script)
-      true                  // Verbose: imprime mensagens no console
-    );
+      const projetos = [
+        {
+          nome: "Projeto SP",
+          descricao: "Sistema web para corretora de imóveis.",
+          latitude: -23.55052,
+          longitude: -46.633308,
+          tipo: "web",
+        },
+        {
+          nome: "Projeto Nova York",
+          descricao: "E-commerce para cliente dos EUA.",
+          latitude: 40.712776,
+          longitude: -74.005974,
+          tipo: "ecommerce",
+        },
+        {
+          nome: "Projeto Japão",
+          descricao: "Aplicativo de eventos em Tóquio.",
+          latitude: 35.6762,
+          longitude: 139.6503,
+          tipo: "app",
+        },
+      ];
+      qb_worldmap.adicionarPins(projetos);
 
-    // Salva função original
-    const originalClick = qb_worldmap.go_to_country;
+      // Salva função original
+      const originalClick = qb_worldmap.go_to_country;
 
-    // Substitui função para abrir o lightbox
-    qb_worldmap.go_to_country = function (codigo) {
-      originalClick(codigo);
+      // Substitui função para abrir o lightbox
+      qb_worldmap.go_to_country = function (codigo) {
+        originalClick(codigo);
 
-      const texto = infoPais[codigo] || "Informações não disponíveis";
-      document.getElementById("lightbox-info").innerText = texto;
-      document.getElementById("lightbox").style.display = "flex";
-    };
+        const texto = infoPais[codigo] || "Informações não disponíveis";
+        document.getElementById("lightbox-info").innerText = texto;
+        document.getElementById("lightbox").style.display = "flex";
+      };
 
-    // Fecha o lightbox ao clicar no X
-    document.getElementById("lightbox-close").onclick = function () {
-      document.getElementById("lightbox").style.display = "none";
-    };
-
-    // Fecha ao clicar fora do conteúdo
-    window.onclick = function (e) {
-      const box = document.getElementById("lightbox-content");
-      if (e.target.id === "lightbox") {
+      // Fecha o lightbox ao clicar no X
+      document.getElementById("lightbox-close").onclick = function () {
         document.getElementById("lightbox").style.display = "none";
-      }
-    };
-  </script>
-  
+      };
+
+      // Fecha ao clicar fora do conteúdo
+      window.onclick = function (e) {
+        const box = document.getElementById("lightbox-content");
+        if (e.target.id === "lightbox") {
+          document.getElementById("lightbox").style.display = "none";
+        }
+      };
+    </script>
   </body>
 </html>
