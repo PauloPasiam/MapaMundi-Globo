@@ -81,10 +81,10 @@
     </div>
 
     <script>
-      // 1. Nomes que você escolhe
+      // Nomes que você escolhe
       const paisesPorNome = ["Brazil", "United States", "China", "Japan"];
 
-      // 2. Mapa de nome → código ISO numérico
+      // Mapa de nome → código ISO numérico
       const nomeParaCodigo = {
         Brazil: "076",
         "United States": "840",
@@ -92,7 +92,7 @@
         Japan: "392",
       };
 
-      // 3. Informações extras por país
+      // Informações extras por país
       const infoPais = {
         "076": "Brasil: 40 Projetos",
         840: "EUA: 5 Projetos",
@@ -100,12 +100,12 @@
         392: "Japão: 2 Projetos",
       };
 
-      // 4. Convertemos os nomes em códigos
+      // Convertemos os nomes em códigos
       const paisesSelecionados = paisesPorNome.map(
         (nome) => nomeParaCodigo[nome]
       );
 
-      // 5. Iniciamos o mapa
+      //Iniciamos o mapa
       qb_worldmap(
         "#qb-worldmap-svg", // Onde o mapa será renderizado
         null, // Tipo de mundo (não usado aqui)
@@ -119,7 +119,16 @@
         null, // Fonte de dados JSON (usando a padrão do script)
         true // Verbose: imprime mensagens no console
       );
+      
+      // Cores por tipo de projeto
+      window.coresPorTema = {
+        web: "#0000FF",
+        ecommerce: "#FFFF00",
+        app: "#00FF00"
+      };
 
+
+      //Dados dos projetos
       const projetos = [
         {
           nome: "Projeto SP",
@@ -143,6 +152,7 @@
           tipo: "app",
         },
       ];
+
       qb_worldmap.adicionarPins(projetos);
 
       // Salva função original
@@ -169,6 +179,8 @@
           document.getElementById("lightbox").style.display = "none";
         }
       };
+
+      
     </script>
   </body>
 </html>
