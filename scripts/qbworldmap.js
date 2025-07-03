@@ -109,17 +109,42 @@ function qb_worldmap(
     autoRotate = false;
   });
 
- // Botão de reset do zoom
-  const resetButton = document.getElementById("reset-zoom");
-  if (resetButton) {
-    resetButton.addEventListener("click", () => {
-      projection.scale(org_scale); // Restaura a escala original
-      svg.selectAll("path").attr("d", path);
-      ocean.attr("r", projection.scale());
-      graticule_lines.attr("d", path);
-      desenharPins(); // reposiciona pins
-    });
-  }
+
+// Botão de reset do zoom e rotação com animação fluida
+const resetButton = document.getElementById("reset-zoom");
+if (resetButton) {
+  resetButton.addEventListener("click", () => {
+   //autoRotate = false; // opcional: pausa rotação automática
+
+    const centerRotation = [0, 0, 0]; //centraliza o globo
+    const startRotation = projection.rotate();
+    const rotateInterpolator = d3.interpolate(startRotation, centerRotation);
+
+    const startScale = projection.scale();
+    const scaleInterpolator = d3.interpolate(startScale, org_scale);
+
+    // Anima rotação + escala suavemente
+    d3.transition()
+      .duration(1000)
+      .tween("resetZoom", () => {
+        return function (t) {
+          projection.rotate(rotateInterpolator(t)).scale(scaleInterpolator(t));
+          svg.selectAll("path").attr("d", path);
+          ocean.attr("r", projection.scale());
+          graticule_lines.attr("d", path);
+          desenharPins();
+        };
+      });
+
+    // Corrige o estado interno do zoom para evitar "snap-back"
+    svg.transition().duration(1000).call(
+      d3.zoom().transform,
+      d3.zoomIdentity // define o estado do zoom como "sem zoom"
+    );
+  });
+}
+
+
 
   // Atualiza visual ao redimensionar janela
   d3.select(window).on("resize", size_changed);
