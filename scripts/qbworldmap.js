@@ -8,6 +8,24 @@ let rotationInterval;
 document.write('<script type="text/javascript" src="scripts/d3.v4.min.js"></script>');
 document.write('<script type="text/javascript" src="scripts/topojson.v0.min.js"></script>');
 
+
+/* trecho para uso com o contador do ligthbox  --- mecha sózinho ao sair da área*/
+
+// const lightbox = document.getElementById("lightbox");
+// if (lightbox) {
+//   lightbox.addEventListener("mouseenter", () => {
+//     clearTimeout(lightbox._timeout);
+//   });
+
+//   lightbox.addEventListener("mouseleave", () => {
+//     lightbox._timeout = setTimeout(() => {
+//       lightbox.style.display = "none";
+//     }, 300);
+//   });
+// }
+
+
+
 // Inicializa o globo interativo
 function qb_worldmap(
   svg_id,
@@ -203,16 +221,28 @@ function desenharPins() {
         .append("circle")
         .attr("cx", x)
         .attr("cy", y)
-        .attr("r", 6)
+        .attr("r", 9)
         .attr("fill", cor)
         .attr("stroke", "#ffffff")
         .attr("stroke-width", 1.5)
         .attr("cursor", "pointer")
-        .on("click", function () {
-          const box = document.getElementById("lightbox-info"); // Abre o lightbox com info do projeto
-          box.innerHTML = `<h3>${projeto.nome}</h3><p>${projeto.descricao}</p>`;
-          document.getElementById("lightbox").style.display = "flex";
-        });
+        .on("mouseover", function () {
+            const box = document.getElementById("lightbox-info"); // Abre o lightbox com info do projeto
+            box.innerHTML = `<h3>${projeto.nome}</h3><p>${projeto.descricao}</p>`;
+            const lightbox = document.getElementById("lightbox");
+            lightbox.style.display = "flex";
+            clearTimeout(lightbox._timeout);
+          })
+        
+       /* Cria timeout para fechar o lightbox sózinho  */
+      /*
+          .on("mouseout", function () {
+            const lightbox = document.getElementById("lightbox");
+            lightbox._timeout = setTimeout(() => {
+              lightbox.style.display = "none";
+            }, 3000); // atraso 
+          });
+      */
     }
   });
 }
